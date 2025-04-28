@@ -1,134 +1,265 @@
-// WellnessActivity Class
-static class WellnessActivity {
-    private String type;
-    private int duration;
-    private Date date;
-    private String notes;
+import java.io.*;
+import java.text.*;
+import java.util.*;
 
-    public WellnessActivity(String type, int duration, Date date, String notes) {
-        this.type = type;
-        this.duration = duration;
-        this.date = date;
-        this.notes = notes;
-    }
+public class StudentWellnessTracker {
 
-    public String getType() {
-        return type;
-    }
+    static class WellnessActivity {
+        private String type;
+        private int duration;
+        private Date date;
+        private String notes;
 
-    public int getDuration() {
-        return duration;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    @Override
-    public String toString() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
-        return type + " | Duration: " + duration + " mins | Date: " + sdf.format(date) + " | Notes: " + notes;
-    }
-}
-
-
-//ActivityManager Class
-static class ActivityManager {
-    private List<WellnessActivity> activities = new ArrayList<>();
-
-    public void addActivity(String type, int duration, Date date, String notes) {
-        activities.add(new WellnessActivity(type, duration, date, notes));
-    }
-
-    public void updateActivity(int index, String type, int duration, Date date, String notes) throws DataNotFoundException {
-        if (index < 0 || index >= activities.size()) {
-            throw new DataNotFoundException("Activity not found.");
+        public WellnessActivity(String type, int duration, Date date, String notes) {
+            this.type = type;
+            this.duration = duration;
+            this.date = date;
+            this.notes = notes;
         }
-        WellnessActivity activity = activities.get(index);
-        activity = new WellnessActivity(type, duration, date, notes);
-        activities.set(index, activity);
-    }
 
-    public void deleteActivity(int index) throws DataNotFoundException {
-        if (index < 0 || index >= activities.size()) {
-            throw new DataNotFoundException("Activity not found.");
+        public String getType() {
+            return type;
         }
-        activities.remove(index);
-    }
 
-    public List<WellnessActivity> getActivities() {
-        return activities;
-    }
-
-    public void viewActivities() {
-        if (activities.isEmpty()) {
-            System.out.println("No activities recorded.");
-        } else {
-            for (int i = 0; i < activities.size(); i++) {
-                System.out.println(i + ": " + activities.get(i));
-            }
+        public int getDuration() {
+            return duration;
         }
-    }
-}
 
-//DataSaverThreadClass
-static class DataSaverThread extends Thread {
-    private ActivityManager activityManager;
-    private final String fileName = "activities.txt";
-
-    public DataSaverThread(ActivityManager activityManager) {
-        this.activityManager = activityManager;
-    }
-
-    @Override
-    public void run() {
-        try {
-            while (true) {
-                Thread.sleep(60000);
-                saveData();
-            }
-        } catch (InterruptedException e) {
-            System.out.println("DataSaverThread interrupted.");
+        public Date getDate() {
+            return date;
         }
-    }
 
-    private void saveData() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
-            List<WellnessActivity> activities = activityManager.getActivities();
-            for (WellnessActivity activity : activities) {
-                String activityData = activity.getType() + "," + activity.getDuration() + "," +
-                        activity.getDate().toString() + "," + activity.getNotes();
-                writer.write(activityData);
-                writer.newLine();
-            }
-            System.out.println("Data saved to file.");
-        } catch (IOException e) {
-            System.out.println("Error saving data: " + e.getMessage());
+        public String getNotes() {
+            return notes;
         }
-    }
 
-    public void loadData() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
-            String line;
+        @Override
+        public String toString() {
             SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
-            while ((line = reader.readLine()) != null) {
-                String[] data = line.split(",");
-                if (data.length == 4) {
-                    String type = data[0];
-                    int duration = Integer.parseInt(data[1]);
-                    Date date = sdf.parse(data[2]);
-                    String notes = data[3];
+            return type + " | Duration: " + duration + " mins | Date: " + sdf.format(date) + " | Notes: " + notes;
+        }
+    }
 
-                    activityManager.addActivity(type, duration, date, notes);
+    static class ActivityManager {
+        private List<WellnessActivity> activities = new ArrayList<>();
+
+        public void addActivity(String type, int duration, Date date, String notes) {
+            activities.add(new WellnessActivity(type, duration, date, notes));
+        }
+
+        public void updateActivity(int index, String type, int duration, Date date, String notes) throws DataNotFoundException {
+            if (index < 0 || index >= activities.size()) {
+                throw new DataNotFoundException("Activity not found.");
+            }
+            WellnessActivity activity = activities.get(index);
+            activity = new WellnessActivity(type, duration, date, notes);
+            activities.set(index, activity);
+        }
+
+        public void deleteActivity(int index) throws DataNotFoundException {
+            if (index < 0 || index >= activities.size()) {
+                throw new DataNotFoundException("Activity not found.");
+            }
+            activities.remove(index);
+        }
+
+        public List<WellnessActivity> getActivities() {
+            return activities;
+        }
+
+        public void viewActivities() {
+            if (activities.isEmpty()) {
+                System.out.println("No activities recorded.");
+            } else {
+                for (int i = 0; i < activities.size(); i++) {
+                    System.out.println(i + ": " + activities.get(i));
                 }
             }
-            System.out.println("Data loaded from file.");
-        } catch (IOException | ParseException e) {
-            System.out.println("Error loading data: " + e.getMessage());
+        }
+    }
+
+    static class DataSaverThread extends Thread {
+        private ActivityManager activityManager;
+        private final String fileName = "activities.txt";
+
+        public DataSaverThread(ActivityManager activityManager) {
+            this.activityManager = activityManager;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (true) {
+                    Thread.sleep(60000);
+                    saveData();
+                }
+            } catch (InterruptedException e) {
+                System.out.println("DataSaverThread interrupted.");
+            }
+        }
+
+        private void saveData() {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+                List<WellnessActivity> activities = activityManager.getActivities();
+                for (WellnessActivity activity : activities) {
+                    String activityData = activity.getType() + "," + activity.getDuration() + "," +
+                            activity.getDate().toString() + "," + activity.getNotes();
+                    writer.write(activityData);
+                    writer.newLine();
+                }
+                System.out.println("Data saved to file.");
+            } catch (IOException e) {
+                System.out.println("Error saving data: " + e.getMessage());
+            }
+        }
+
+        public void loadData() {
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                String line;
+                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+                while ((line = reader.readLine()) != null) {
+                    String[] data = line.split(",");
+                    if (data.length == 4) {
+                        String type = data[0];
+                        int duration = Integer.parseInt(data[1]);
+                        Date date = sdf.parse(data[2]);
+                        String notes = data[3];
+
+                        activityManager.addActivity(type, duration, date, notes);
+                    }
+                }
+                System.out.println("Data loaded from file.");
+            } catch (IOException | ParseException e) {
+                System.out.println("Error loading data: " + e.getMessage());
+            }
+        }
+    }
+
+    static class DataNotFoundException extends Exception {
+        public DataNotFoundException(String message) {
+            super(message);
+        }
+    }
+
+    private static ActivityManager activityManager = new ActivityManager();
+    private static Scanner scanner = new Scanner(System.in);
+    private static DataSaverThread dataSaverThread = new DataSaverThread(activityManager);
+
+    public static void main(String[] args) {
+        dataSaverThread.loadData();
+        dataSaverThread.start();
+
+        while (true) {
+            showMenu();
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+            switch (choice) {
+                case 1:
+                    addWellnessActivity();
+                    break;
+                case 2:
+                    viewActivities();
+                    break;
+                case 3:
+                    updateActivity();
+                    break;
+                case 4:
+                    deleteActivity();
+                    break;
+                case 5:
+                    System.out.println("Exiting the application...");
+                    dataSaverThread.interrupt();
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    private static void showMenu() {
+        System.out.println("\nStudent Wellness Tracker");
+        System.out.println("1. Add Wellness Activity");
+        System.out.println("2. View Wellness Activities");
+        System.out.println("3. Update Wellness Activity");
+        System.out.println("4. Delete Wellness Activity");
+        System.out.println("5. Exit");
+        System.out.print("Enter your choice: ");
+    }
+
+    private static void addWellnessActivity() {
+        try {
+            System.out.print("Enter Activity Type (Exercise, Study, Meditation, etc.): ");
+            String type = scanner.nextLine();
+
+            System.out.print("Enter Duration (in minutes): ");
+            int duration = scanner.nextInt();
+
+            scanner.nextLine();
+
+            System.out.print("Enter Date (dd.MM.yyyy): ");
+            String dateStr = scanner.nextLine();
+
+            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+            Date date = sdf.parse(dateStr);
+
+            System.out.print("Enter Notes: ");
+            String notes = scanner.nextLine();
+
+            activityManager.addActivity(type, duration, date, notes);
+            System.out.println("Activity added successfully!");
+        } catch (ParseException e) {
+            System.out.println("Error parsing date: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error adding activity: " + e.getMessage());
+        }
+    }
+
+    private static void viewActivities() {
+        activityManager.viewActivities();
+    }
+
+    private static void updateActivity() {
+        try {
+            System.out.print("Enter Activity Index to Update: ");
+            int index = scanner.nextInt();
+            scanner.nextLine();
+
+            System.out.print("Enter New Activity Type: ");
+            String type = scanner.nextLine();
+
+            System.out.print("Enter New Duration (in minutes): ");
+            int duration = scanner.nextInt();
+
+            scanner.nextLine();
+
+            System.out.print("Enter New Date (dd.MM.yyyy): ");
+            String dateStr = scanner.nextLine();
+
+            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+            Date date = sdf.parse(dateStr);
+
+            System.out.print("Enter New Notes: ");
+            String notes = scanner.nextLine();
+
+            activityManager.updateActivity(index, type, duration, date, notes);
+            System.out.println("Activity updated successfully!");
+        } catch (ParseException e) {
+            System.out.println("Error parsing date: " + e.getMessage());
+        } catch (DataNotFoundException e) {
+            System.out.println(e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error updating activity: " + e.getMessage());
+        }
+    }
+
+    private static void deleteActivity() {
+        try {
+            System.out.print("Enter Activity Index to Delete: ");
+            int index = scanner.nextInt();
+            activityManager.deleteActivity(index);
+            System.out.println("Activity deleted successfully!");
+        } catch (DataNotFoundException e) {
+            System.out.println(e.getMessage());
         }
     }
 }
